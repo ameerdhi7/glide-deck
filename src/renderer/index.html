@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="Content-Security-Policy"
+  content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:" />
+<title>NebulaX</title>
+<link rel="stylesheet" href="../../node_modules/@xterm/xterm/css/xterm.css" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="traffic drag"></div>
+    <div class="brand">
+      <svg viewBox="0 0 64 64" class="logo" aria-hidden="true">
+        <circle cx="32" cy="32" r="11" fill="var(--gold)" />
+        <circle cx="32" cy="32" r="20" fill="none" stroke="var(--gold)" stroke-opacity=".35" stroke-width="3" />
+      </svg>
+      <span>NebulaX</span>
+    </div>
+    <nav id="nav">
+      <button class="nav-item" data-view="overview"><i data-icon="gauge"></i><span>Overview</span></button>
+      <button class="nav-item" data-view="tickets"><i data-icon="ticket"></i><span>Tickets</span><b class="count" id="nav-tickets"></b></button>
+      <button class="nav-item" data-view="prs"><i data-icon="pr"></i><span>Pull requests</span><b class="count" id="nav-prs"></b></button>
+      <button class="nav-item" data-view="activity"><i data-icon="bell"></i><span>Activity</span><b class="count hot" id="nav-activity"></b></button>
+      <button class="nav-item" data-view="terminal"><i data-icon="terminal"></i><span>Terminal</span><b class="live" id="nav-term"></b></button>
+    </nav>
+    <div class="side-foot">
+      <button class="conn" id="conn" title="Reconnect to NebulaX">
+        <span class="dot" id="conn-dot"></span>
+        <span class="conn-text"><span id="conn-state">connecting</span><small id="conn-detail"></small></span>
+      </button>
+      <button class="nav-item" id="open-settings"><i data-icon="gear"></i><span>Settings</span></button>
+    </div>
+  </aside>
+
+  <main>
+    <header class="topbar drag">
+      <h1 id="view-title">Overview</h1>
+      <span class="sub" id="view-sub"></span>
+      <span class="spacer"></span>
+      <div class="top-actions no-drag" id="top-actions"></div>
+    </header>
+
+    <section class="view" id="view-overview">
+      <div class="overview">
+        <div class="card hero">
+          <div class="hero-head">
+            <div>
+              <div class="eyebrow">Ticket progress</div>
+              <div class="hero-num"><span id="ov-done">0</span><span class="of"> of <span id="ov-total">0</span> done</span></div>
+            </div>
+            <div class="hero-pct" id="ov-pct">0%</div>
+          </div>
+          <div class="stack" id="ov-stack"></div>
+          <div class="legend" id="ov-legend"></div>
+        </div>
+        <div class="tiles" id="ov-tiles"></div>
+        <div class="cols">
+          <div class="card">
+            <div class="card-head"><h2>Needs you</h2><span class="sub" id="ov-needs-count"></span></div>
+            <div id="ov-needs" class="mini-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>Recent activity</h2><button class="link" data-goto="activity">See all</button></div>
+            <div id="ov-activity" class="mini-list"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Connections</h2></div>
+          <div id="ov-conns" class="conns"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-tickets">
+      <div class="toolbar">
+        <div class="chips" id="tk-filters"></div>
+        <span class="spacer"></span>
+        <input id="tk-search" type="search" placeholder="Search tickets" spellcheck="false" />
+      </div>
+      <div class="split">
+        <div class="list" id="tk-list"></div>
+        <aside class="detail" id="tk-detail"></aside>
+      </div>
+    </section>
+
+    <section class="view" id="view-prs">
+      <div class="banner err" id="pr-error" hidden></div>
+      <div class="pr-groups" id="pr-groups"></div>
+    </section>
+
+    <section class="view" id="view-activity">
+      <div class="feed" id="feed"></div>
+    </section>
+
+    <section class="view" id="view-terminal">
+      <div class="term-wrap"><div id="term"></div></div>
+    </section>
+  </main>
+</div>
+
+<dialog id="settings">
+  <form method="dialog" class="dlg">
+    <div class="dlg-head"><h2>Settings</h2><button class="icon-btn" value="cancel" aria-label="Close">✕</button></div>
+    <fieldset>
+      <legend>NebulaX</legend>
+      <label>nebula binary<input name="nebulaBin" id="set-bin" spellcheck="false" /></label>
+      <label>Bridge port<input name="bridgePort" type="number" min="1024" max="65535" /></label>
+      <label>Terminal folder<input name="terminalCwd" placeholder="home folder" spellcheck="false" /></label>
+      <label class="check"><input type="checkbox" name="terminalAutostart" /> Start the NebulaX terminal when the app opens</label>
+    </fieldset>
+    <fieldset>
+      <legend>Notifications</legend>
+      <label class="check"><input type="checkbox" name="notifyTickets" /> Ticket updates — started, needs input, ready, failed, checks, review</label>
+      <label class="check"><input type="checkbox" name="notifyPrs" /> Pull requests — review requests, approvals, checks, comments, merges</label>
+      <label class="check"><input type="checkbox" name="notifyConnections" /> Connection problems</label>
+      <label class="check"><input type="checkbox" name="notifySound" /> Play a sound</label>
+      <label class="check"><input type="checkbox" name="notifyWhenFocused" /> Also notify while NebulaX is in front</label>
+      <label>Check GitHub every<span class="inline"><input name="prPollSeconds" type="number" min="15" max="3600" /> seconds</span></label>
+    </fieldset>
+    <div class="dlg-foot">
+      <button type="button" id="test-notify">Send a test notification</button>
+      <span class="spacer"></span>
+      <button value="cancel">Cancel</button>
+      <button value="save" class="primary" id="save-settings">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="changes">
+  <div class="dlg wide">
+    <div class="dlg-head"><h2 id="ch-title">Changes</h2><span class="sub" id="ch-count"></span><span class="spacer"></span><button class="icon-btn" id="ch-close" aria-label="Close">✕</button></div>
+    <div id="ch-body"></div>
+  </div>
+</dialog>
+
+<script src="../../node_modules/@xterm/xterm/lib/xterm.js"></script>
+<script src="../../node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+<script src="../shared/progress.js"></script>
+<script src="icons.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
