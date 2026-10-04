@@ -26,7 +26,7 @@ const DEFAULTS = {
     // Claude: MCP server names from `claude mcp list`, comma-separated.
     // Empty derives one from `source`.
     mcpServers: "",
-    // Extra scope in plain words ("only the questify repos").
+    // Extra scope in plain words ("only the api and web repos").
     query: "",
     // Each listing is a paid model turn, so it runs this often, not every poll.
     refreshMinutes: 10,

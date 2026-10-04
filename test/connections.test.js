@@ -75,7 +75,7 @@ test("an unreadable config is refused, not overwritten", async () => {
 });
 
 test("helpers", () => {
-  assert.strictEqual(envName("aau-jira"), "NEBULA_TOKEN_AAU_JIRA");
+  assert.strictEqual(envName("work-jira"), "NEBULA_TOKEN_WORK_JIRA");
   assert.strictEqual(tokenHint(""), "");
   assert.strictEqual(tokenHint("short"), "••••");
   assert.strictEqual(normalize({ kind: "agent", harness: "codex", source: "Asana" }).harness, "codex");

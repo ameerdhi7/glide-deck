@@ -2,3 +2,5 @@ node_modules/
 .dev/
 dist/
 .DS_Store
+.vscode/
+.vercel/

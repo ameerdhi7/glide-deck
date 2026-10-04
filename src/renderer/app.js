@@ -4,6 +4,8 @@
 
 const { STEPS, progressOf, needsYou, tally } = window.NebulaProgress;
 const api = window.nebula;
+// Activity rows kept on screen; main stores the same number (settings.js).
+const ACTIVITY_CAP = 300;
 
 const S = {
   view: "overview",
@@ -2415,7 +2417,6 @@ async function init() {
   });
   api.onActivity((e) => {
     S.activity.unshift(e);
-    // main keeps the same 300 (ACTIVITY_CAP in settings.js)
     if (S.activity.length > ACTIVITY_CAP) S.activity.length = ACTIVITY_CAP;
     if (S.view === "activity") S.unreadShown++;
     renderView();
