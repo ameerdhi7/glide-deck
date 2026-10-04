@@ -4,7 +4,7 @@ A macOS desktop companion for [NebulaX](https://github.com/ameerdhi7/NebulaX). I
 shows ticket progress, pull requests, worktrees and notes, raises a notification
 for every update, and runs the NebulaX TUI in a built-in terminal.
 
-**Site:** https://site-eight-lovat-80.vercel.app · **Docs:** [`docs/`](docs)
+**Site:** https://glide-deck.vercel.app · **Docs:** [`docs/`](docs)
 
 ![Glide Deck tickets view](docs/images/tickets.png)
 
