@@ -3,7 +3,7 @@
 // ~/.cargo/bin) nor `gh` (in /opt/homebrew/bin). Ask the user's login shell
 // for its PATH once, and fall back to the usual install dirs if that fails.
 
-const { execFileSync } = require("node:child_process");
+const { execFile, execFileSync } = require("node:child_process");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
@@ -17,23 +17,43 @@ const FALLBACK_DIRS = [
 
 let cachedPath = null;
 
+const SHELL_ARGS = ["-ilc", 'printf "__PATH__%s__PATH__" "$PATH"'];
+
+function mergePath(shellOut) {
+  const m = (shellOut || "").match(/__PATH__(.*)__PATH__/);
+  const parts = [...(m ? m[1] : "").split(":"), ...(process.env.PATH || "").split(":"), ...FALLBACK_DIRS];
+  return [...new Set(parts.filter(Boolean))].join(":");
+}
+
+/**
+ * Resolve the login PATH off the main thread — an interactive login shell
+ * takes ~1s to start, which would otherwise freeze the app at launch. Call
+ * once at startup; `loginPath()` is then a cache hit.
+ */
+function warmLoginPath() {
+  if (cachedPath) return Promise.resolve(cachedPath);
+  return new Promise((resolve) => {
+    execFile(process.env.SHELL || "/bin/zsh", SHELL_ARGS, { encoding: "utf8", timeout: 4000 }, (_err, stdout) => {
+      cachedPath = cachedPath || mergePath(stdout);
+      resolve(cachedPath);
+    });
+  });
+}
+
+/** The login PATH; blocks only if `warmLoginPath` hasn't finished. */
 function loginPath() {
   if (cachedPath) return cachedPath;
-  let shellPath = "";
+  let out = "";
   try {
-    const shell = process.env.SHELL || "/bin/zsh";
-    shellPath = execFileSync(shell, ["-ilc", 'printf "__PATH__%s__PATH__" "$PATH"'], {
+    out = execFileSync(process.env.SHELL || "/bin/zsh", SHELL_ARGS, {
       encoding: "utf8",
       timeout: 4000,
       stdio: ["ignore", "pipe", "ignore"],
     });
-    const m = shellPath.match(/__PATH__(.*)__PATH__/);
-    shellPath = m ? m[1] : "";
   } catch {
-    shellPath = "";
+    out = "";
   }
-  const parts = [...shellPath.split(":"), ...(process.env.PATH || "").split(":"), ...FALLBACK_DIRS];
-  cachedPath = [...new Set(parts.filter(Boolean))].join(":");
+  cachedPath = mergePath(out);
   return cachedPath;
 }
 
@@ -62,4 +82,4 @@ function nebulaBin(configured) {
   return which("nebula");
 }
 
-module.exports = { loginPath, childEnv, which, nebulaBin };
+module.exports = { loginPath, warmLoginPath, childEnv, which, nebulaBin };

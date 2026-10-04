@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta http-equiv="Content-Security-Policy"
   content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:" />
-<title>NebulaX</title>
+<title>Glide Deck</title>
 <link rel="stylesheet" href="../../node_modules/@xterm/xterm/css/xterm.css" />
 <link rel="stylesheet" href="styles.css" />
 </head>
@@ -13,24 +13,30 @@
   <aside class="sidebar">
     <div class="traffic drag"></div>
     <div class="brand">
-      <svg viewBox="0 0 64 64" class="logo" aria-hidden="true">
-        <circle cx="32" cy="32" r="11" fill="var(--gold)" />
-        <circle cx="32" cy="32" r="20" fill="none" stroke="var(--gold)" stroke-opacity=".35" stroke-width="3" />
+      <svg viewBox="0 0 10 10" class="logo" aria-hidden="true" fill="currentColor">
+        <rect x="0" y="0" width="3" height="3" rx=".8" /><rect x="7" y="0" width="3" height="3" rx=".8" /><rect x="3.5" y="3.5" width="3" height="3" rx=".8" />
+        <rect x="0" y="7" width="3" height="3" rx=".8" /><rect x="7" y="7" width="3" height="3" rx=".8" />
       </svg>
-      <span>NebulaX</span>
+      <span>Glide Deck</span>
     </div>
     <nav id="nav">
+      <span class="nav-glider" id="nav-glider" aria-hidden="true"></span>
       <button class="nav-item" data-view="overview"><i data-icon="gauge"></i><span>Overview</span></button>
+      <button class="nav-item" data-view="terminal"><i data-icon="terminal"></i><span>Working hub</span><b class="live" id="nav-term"></b></button>
+      <button class="nav-item" data-view="projects"><i data-icon="folder"></i><span>Projects</span><b class="count" id="nav-projects"></b></button>
+      <button class="nav-item" data-view="worktrees"><i data-icon="branch"></i><span>Worktrees</span><b class="count" id="nav-worktrees"></b></button>
       <button class="nav-item" data-view="tickets"><i data-icon="ticket"></i><span>Tickets</span><b class="count" id="nav-tickets"></b></button>
       <button class="nav-item" data-view="prs"><i data-icon="pr"></i><span>Pull requests</span><b class="count" id="nav-prs"></b></button>
       <button class="nav-item" data-view="activity"><i data-icon="bell"></i><span>Activity</span><b class="count hot" id="nav-activity"></b></button>
-      <button class="nav-item" data-view="terminal"><i data-icon="terminal"></i><span>Terminal</span><b class="live" id="nav-term"></b></button>
+      <button class="nav-item" data-view="notes"><i data-icon="note"></i><span>Notes</span><b class="count" id="nav-notes"></b></button>
+      <button class="nav-item" data-view="shell"><i data-icon="prompt"></i><span>Terminal</span><b class="live" id="nav-shell"></b></button>
     </nav>
     <div class="side-foot">
       <button class="conn" id="conn" title="Reconnect to NebulaX">
         <span class="dot" id="conn-dot"></span>
         <span class="conn-text"><span id="conn-state">connecting</span><small id="conn-detail"></small></span>
       </button>
+      <button class="nav-item" id="theme-toggle" title="Switch between system, light and dark"></button>
       <button class="nav-item" id="open-settings"><i data-icon="gear"></i><span>Settings</span></button>
     </div>
   </aside>
@@ -45,31 +51,43 @@
 
     <section class="view" id="view-overview">
       <div class="overview">
-        <div class="card hero">
-          <div class="hero-head">
-            <div>
-              <div class="eyebrow">Ticket progress</div>
-              <div class="hero-num"><span id="ov-done">0</span><span class="of"> of <span id="ov-total">0</span> done</span></div>
+        <div class="ov-strip" id="ov-strip"></div>
+        <div class="ov-grid">
+          <div class="panel ov-flow">
+            <div class="panel-head">
+              <h2 class="c-cyan">Activity</h2><span class="note">events · last 24h · 30m buckets</span>
+              <span class="end"><span class="tag on-air c-green" id="ov-live">Live</span></span>
             </div>
-            <div class="hero-pct" id="ov-pct">0%</div>
+            <div class="flow-body">
+              <div class="flow-stats" id="ov-flow-stats"></div>
+              <div class="histo-wrap">
+                <div class="histo-axis" id="ov-histo-axis"></div>
+                <div class="histo" id="ov-histo"></div>
+                <div class="histo-x"><span>-24h</span><span>-18h</span><span>-12h</span><span>-6h</span><span>now</span></div>
+              </div>
+            </div>
           </div>
-          <div class="stack" id="ov-stack"></div>
-          <div class="legend" id="ov-legend"></div>
+          <div class="panel ov-pipe">
+            <div class="panel-head"><h2 class="c-green">Pipeline</h2><span class="end"><span class="note" id="ov-pipe-note"></span></span></div>
+            <div class="meters" id="ov-meters"></div>
+            <div class="stages" id="ov-stages"></div>
+          </div>
+          <div class="panel ov-flight">
+            <div class="panel-head"><h2 class="c-cyan">In flight</h2><span class="end"><span class="big-num c-cyan" id="ov-flight-n" style="font-size:26px"></span><span class="tag c-dim">active</span></span></div>
+            <div class="flight" id="ov-flight"></div>
+          </div>
+          <div class="panel ov-alert" id="ov-alert">
+            <div class="panel-head"><h2>Needs you</h2><span class="end"><span class="note">tickets + pull requests</span></span></div>
+            <div class="alert-body" id="ov-alert-body"></div>
+            <div class="last-err" id="ov-last-err"></div>
+          </div>
         </div>
-        <div class="tiles" id="ov-tiles"></div>
-        <div class="cols">
-          <div class="card">
-            <div class="card-head"><h2>Needs you</h2><span class="sub" id="ov-needs-count"></span></div>
-            <div id="ov-needs" class="mini-list"></div>
+        <div class="panel stream">
+          <div class="stream-head">
+            <h2>&gt;_ Event stream</h2><span class="cmd">tail -f ~/.nebula/activity.log</span>
+            <span class="end" id="ov-stream-ctl"></span>
           </div>
-          <div class="card">
-            <div class="card-head"><h2>Recent activity</h2><button class="link" data-goto="activity">See all</button></div>
-            <div id="ov-activity" class="mini-list"></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-head"><h2>Connections</h2></div>
-          <div id="ov-conns" class="conns"></div>
+          <div class="stream-body" id="ov-stream"></div>
         </div>
       </div>
     </section>
@@ -79,6 +97,7 @@
         <div class="chips" id="tk-filters"></div>
         <span class="spacer"></span>
         <input id="tk-search" type="search" placeholder="Search tickets" spellcheck="false" />
+        <button class="btn" id="tk-resync" title="Sync tickets now, re-reading your connected trackers">Resync</button>
       </div>
       <div class="split">
         <div class="list" id="tk-list"></div>
@@ -95,8 +114,73 @@
       <div class="feed" id="feed"></div>
     </section>
 
+    <section class="view" id="view-projects">
+      <div class="banner err" id="pj-error" hidden></div>
+      <div class="toolbar">
+        <input id="pj-search" type="search" placeholder="Filter projects" spellcheck="false" />
+      </div>
+      <div class="pj-list" id="pj-list"></div>
+    </section>
+
+    <section class="view" id="view-worktrees">
+      <div class="wt-split">
+        <aside class="wt-projects">
+          <div class="wt-projects-head">Projects</div>
+          <div id="wt-projects"></div>
+        </aside>
+        <div class="wt-main">
+          <div class="toolbar">
+            <label class="check-all"><input type="checkbox" id="wt-all" /> <span id="wt-all-label">Select all</span></label>
+            <label class="check-all"><input type="checkbox" id="wt-force" /> Force — discard uncommitted changes</label>
+            <span class="spacer"></span>
+            <input id="wt-search" type="search" placeholder="Filter worktrees" spellcheck="false" />
+            <button class="btn danger" id="wt-delete" disabled>Delete selected</button>
+          </div>
+          <div class="wt-rotate" id="wt-rotate">
+            <label class="check-all"><input type="checkbox" id="rot-on" /> Auto-delete worktrees</label>
+            <span class="rot-rule">
+              older than
+              <input id="rot-n" type="number" min="1" max="999" />
+              <select id="rot-unit">
+                <option value="hours">hours</option>
+                <option value="days">days</option>
+                <option value="weeks">weeks</option>
+              </select>
+              by
+              <select id="rot-basis">
+                <option value="activity">last activity</option>
+                <option value="created">creation date</option>
+              </select>
+            </span>
+            <span class="sub" id="rot-status" title="Checkouts with a running session or uncommitted changes are always kept"></span>
+            <span class="spacer"></span>
+            <button class="btn" id="rot-run">Rotate now</button>
+          </div>
+          <div class="wt-groups" id="wt-groups"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-notes">
+      <div class="nt-split">
+        <aside class="wt-projects">
+          <div class="wt-projects-head">Show</div>
+          <div id="nt-scopes"></div>
+        </aside>
+        <div class="nt-list-col">
+          <div class="toolbar"><input id="nt-search" type="search" placeholder="Search notes" spellcheck="false" /></div>
+          <div class="nt-list" id="nt-list"></div>
+        </div>
+        <div class="nt-editor" id="nt-editor"></div>
+      </div>
+    </section>
+
     <section class="view" id="view-terminal">
       <div class="term-wrap"><div id="term"></div></div>
+    </section>
+
+    <section class="view" id="view-shell">
+      <div class="term-wrap"><div id="shell-term"></div></div>
     </section>
   </main>
 </div>
@@ -115,12 +199,54 @@
       <legend>Notifications</legend>
       <label class="check"><input type="checkbox" name="notifyTickets" /> Ticket updates — started, needs input, ready, failed, checks, review</label>
       <label class="check"><input type="checkbox" name="notifyPrs" /> Pull requests — review requests, approvals, checks, comments, merges</label>
+      <label class="check"><input type="checkbox" name="notifyPrsLinkedOnly" /> …only for PRs linked to one of my tickets</label>
       <label class="check"><input type="checkbox" name="notifyConnections" /> Connection problems</label>
-      <label class="check"><input type="checkbox" name="notifySound" /> Play a sound</label>
-      <label class="check"><input type="checkbox" name="notifyWhenFocused" /> Also notify while NebulaX is in front</label>
-      <label>Check GitHub every<span class="inline"><input name="prPollSeconds" type="number" min="15" max="3600" /> seconds</span></label>
+      <label class="check"><input type="checkbox" name="notifySound" /> Play a sound when activity arrives</label>
+      <div class="sound-picks" id="sound-picks">
+        <label>Tickets<span class="inline"><select name="soundTickets" data-sound></select><button type="button" class="btn" data-preview="soundTickets">▶</button></span></label>
+        <label>Pull requests<span class="inline"><select name="soundPrs" data-sound></select><button type="button" class="btn" data-preview="soundPrs">▶</button></span></label>
+        <label>Connections<span class="inline"><select name="soundConnections" data-sound></select><button type="button" class="btn" data-preview="soundConnections">▶</button></span></label>
+        <label>Worktrees<span class="inline"><select name="soundWorktrees" data-sound></select><button type="button" class="btn" data-preview="soundWorktrees">▶</button></span></label>
+      </div>
+      <label class="check"><input type="checkbox" name="notifyWhenFocused" /> Also notify while Glide Deck is in front</label>
+    </fieldset>
+    <fieldset>
+      <legend>Connections</legend>
+      <div class="hint">Trackers and code hosts NebulaX reads. Tokens go to NebulaX's <code>config.local.json</code> on this Mac — never exported or sent over <code>nebula ssh</code>.</div>
+      <div id="conn-list" class="conn-list"></div>
+      <div class="conn-row" id="gh-row">
+        <div class="meta"><span>GitHub <span class="sub">gh CLI</span></span><small id="gh-status">checking…</small></div>
+        <button type="button" class="btn" id="gh-login">Sign in</button>
+      </div>
+      <div class="conn-add">
+        <span class="sub">Add</span>
+        <button type="button" class="btn" data-add="jira">Jira</button>
+        <button type="button" class="btn" data-add="bitbucket">Bitbucket</button>
+        <button type="button" class="btn" data-add="agent">Other tracker…</button>
+      </div>
+      <div class="hint" id="conn-discovery"></div>
+    </fieldset>
+    <fieldset>
+      <legend>Pull requests</legend>
+      <label>Get pull requests through
+        <select name="prProvider">
+          <option value="gh">GitHub CLI (gh)</option>
+          <option value="claude">Claude Code — its MCP servers</option>
+          <option value="codex">Codex — its MCP servers</option>
+        </select>
+      </label>
+      <label data-pr-provider="gh">Check GitHub every<span class="inline"><input name="prPollSeconds" type="number" min="15" max="3600" /> seconds</span></label>
+      <div class="agent-fields" data-pr-provider="agent">
+        <label>Code host<input name="prSource" placeholder="GitHub, Bitbucket, GitLab…" spellcheck="false" /></label>
+        <label>Model<input name="prModel" placeholder="haiku" spellcheck="false" /></label>
+        <label data-pr-provider="claude">MCP servers<input name="prMcpServers" placeholder="from the code host — e.g. github, bitbucket" spellcheck="false" /></label>
+        <label>Scope<input name="prQuery" placeholder="everything of mine (optional, plain words)" spellcheck="false" /></label>
+        <label>Ask every<span class="inline"><input name="prRefreshMinutes" type="number" min="2" max="1440" /> minutes</span></label>
+        <div class="hint">Each check is one headless model turn (about half a minute, a few cents) that only reads. It is also given your ticket keys, so PRs the tracker links to a ticket show up on it.</div>
+      </div>
     </fieldset>
     <div class="dlg-foot">
+      <button type="button" id="open-welcome">Getting started</button>
       <button type="button" id="test-notify">Send a test notification</button>
       <span class="spacer"></span>
       <button value="cancel">Cancel</button>
@@ -129,16 +255,88 @@
   </form>
 </dialog>
 
+<dialog id="conn-edit">
+  <form method="dialog" class="dlg" id="ce-form" autocomplete="off">
+    <div class="dlg-head"><h2 id="ce-title">Connection</h2><button class="icon-btn" value="cancel" aria-label="Close">✕</button></div>
+    <div class="hint" id="ce-help"></div>
+    <label>Name<input name="label" placeholder="Work Jira" spellcheck="false" /></label>
+    <label data-kind="jira">Site URL<input name="base_url" placeholder="https://your-site.atlassian.net" spellcheck="false" /></label>
+    <label data-kind="jira bitbucket"><span id="ce-account-label">Email</span><input name="account" placeholder="you@company.com" spellcheck="false" /></label>
+    <label data-kind="jira bitbucket"><span id="ce-token-label">API token</span>
+      <span class="inline"><input name="token" type="password" spellcheck="false" autocomplete="new-password" /><button type="button" class="btn" id="ce-reveal">Show</button></span>
+    </label>
+    <div class="hint" data-kind="jira bitbucket" id="ce-token-note"></div>
+    <label data-kind="jira">JQL<input name="jql" placeholder="assignee = currentUser() AND statusCategory != Done ORDER BY Rank ASC" spellcheck="false" /></label>
+    <label data-kind="bitbucket">Repositories<input name="repos" placeholder="workspace/repo, workspace/other (optional)" spellcheck="false" /></label>
+    <label data-kind="agent">Ask through
+      <select name="harness"><option value="claude">Claude Code — its MCP servers</option><option value="codex">Codex — its MCP servers</option></select>
+    </label>
+    <label data-kind="agent">Tracker<input name="source" placeholder="Linear, Asana, Trello, GitHub Issues, ClickUp…" spellcheck="false" /></label>
+    <label data-kind="agent">MCP servers<input name="mcp_servers" placeholder="as claude mcp list names them — e.g. linear (optional)" spellcheck="false" /></label>
+    <label data-kind="agent">Scope<input name="query" placeholder="everything assigned to me (optional, plain words)" spellcheck="false" /></label>
+    <label data-kind="jira agent">Repo to work in<input name="repo" placeholder="path of a NebulaX project, so Start can launch an agent (optional)" spellcheck="false" /></label>
+    <div class="ce-result" id="ce-result"></div>
+    <div class="dlg-foot">
+      <button type="button" class="danger" id="ce-remove">Remove</button>
+      <button type="button" id="ce-test" data-kind="jira bitbucket">Test</button>
+      <span class="spacer"></span>
+      <button value="cancel">Cancel</button>
+      <button type="button" class="primary" id="ce-save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="welcome">
+  <div class="dlg wz">
+    <ol class="wz-steps" id="wz-steps"></ol>
+    <div class="wz-body" id="wz-body"></div>
+    <div class="dlg-foot">
+      <button type="button" id="wz-skip">Skip setup</button>
+      <span class="spacer"></span>
+      <button type="button" id="wz-back">Back</button>
+      <button type="button" class="primary" id="wz-next">Next</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="changes">
   <div class="dlg wide">
-    <div class="dlg-head"><h2 id="ch-title">Changes</h2><span class="sub" id="ch-count"></span><span class="spacer"></span><button class="icon-btn" id="ch-close" aria-label="Close">✕</button></div>
+    <div class="dlg-head"><h2 id="ch-title">Changes</h2><span class="ch-src" id="ch-src"></span><span class="sub" id="ch-count"></span><span class="spacer"></span><button class="icon-btn" id="ch-close" aria-label="Close">✕</button></div>
+    <div class="ch-where" id="ch-where"></div>
     <div id="ch-body"></div>
+  </div>
+</dialog>
+
+<dialog id="wt-confirm">
+  <div class="dlg">
+    <div class="dlg-head"><h2 id="wtc-title">Delete worktrees</h2></div>
+    <div class="sub" id="wtc-body"></div>
+    <ul class="wtc-list" id="wtc-list"></ul>
+    <div class="dlg-foot">
+      <span class="spacer"></span>
+      <button id="wtc-cancel">Cancel</button>
+      <button class="danger-solid" id="wtc-ok">Delete</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="pj-confirm">
+  <div class="dlg">
+    <div class="dlg-head"><h2 id="pjc-title">Remove project</h2></div>
+    <div class="sub" id="pjc-body"></div>
+    <div class="dlg-foot">
+      <span class="spacer"></span>
+      <button id="pjc-cancel">Cancel</button>
+      <button class="danger-solid" id="pjc-ok">Remove</button>
+    </div>
   </div>
 </dialog>
 
 <script src="../../node_modules/@xterm/xterm/lib/xterm.js"></script>
 <script src="../../node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+<script src="../../node_modules/@xterm/addon-webgl/lib/addon-webgl.js"></script>
 <script src="../shared/progress.js"></script>
+<script src="../shared/links.js"></script>
 <script src="icons.js"></script>
 <script src="app.js"></script>
 </body>

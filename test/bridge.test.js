@@ -40,3 +40,36 @@ test("bridge: first snapshot is a silent baseline, later deltas become events", 
   bridge.stop();
   wss.close();
 });
+
+test("bridge: project add/remove are numbered requests settled by the daemon's reply", async () => {
+  const wss = new WebSocketServer({ port: 0 });
+  await new Promise((r) => wss.on("listening", r));
+  const port = wss.address().port;
+  const seen = [];
+  wss.on("connection", (sock) =>
+    sock.on("message", (data) => {
+      const { kind, payload } = JSON.parse(data.toString());
+      seen.push({ kind, payload });
+      const reply =
+        kind === "projects/add"
+          ? { kind: "request/done", payload: { req_id: payload.req_id } }
+          : { kind: "request/error", payload: { req_id: payload.req_id, message: "no such project" } };
+      sock.send(JSON.stringify(reply));
+    }),
+  );
+
+  const bridge = new NebulaBridge({ get: () => ({ bridgePort: port, nebulaBin: "" }) });
+  bridge.port = port;
+  const connected = new Promise((r) => bridge.on("status", (s) => s.state === "connected" && r()));
+  bridge.connect();
+  await connected;
+
+  assert.deepEqual(await bridge.addProject("/src/app"), { ok: true });
+  assert.deepEqual(await bridge.removeProject("p9"), { ok: false, error: "no such project" });
+  assert.equal(seen[0].kind, "projects/add");
+  assert.equal(seen[0].payload.path, "/src/app");
+  assert.equal(seen[1].payload.id, "p9");
+  assert.notEqual(seen[0].payload.req_id, seen[1].payload.req_id);
+  bridge.stop();
+  wss.close();
+});

@@ -1,4 +1,4 @@
-# NebulaX Desktop
+# Glide Deck
 
 A macOS desktop companion for [NebulaX](../nebula): ticket progress, your ticket
 list, pull requests, desktop notifications for every update, and the NebulaX TUI
@@ -26,7 +26,7 @@ Needs Node 22+ (`nvm use`), `nebula` on your PATH, and `gh auth login` for PRs.
 npm install      # also rebuilds node-pty for Electron
 npm start
 npm test
-npm run dist     # unsigned dist/mac-arm64/NebulaX.app  (dist:dmg for a .dmg)
+npm run dist     # unsigned dist/mac-arm64/Glide Deck.app  (dist:dmg for a .dmg)
 ```
 
 Dev isolation: `NEBULA_RUNTIME_DIR`/`NEBULA_DATA_DIR` point it at a sandboxed
